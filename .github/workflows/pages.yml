@@ -42,8 +42,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # Apex custom domain (https://dmarniorganic.com/) — not /harvest-co/
-          VITE_BASE_PATH: "/"
+          VITE_BASE_PATH: ${{ format('/{0}/', github.event.repository.name) }}
           VITE_API_BASE: ${{ vars.VITE_API_BASE }}
 
       - name: Upload artifact

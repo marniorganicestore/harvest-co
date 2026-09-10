@@ -96,12 +96,7 @@ ghcr.io/dmarni/harvest-co/frontend
 
 The Vite storefront **static `dist`** deploys to GitHub Pages on push to `main` (frontend paths) or via **Actions → GitHub Pages → Run workflow**. `GITHUB_TOKEN` cannot create a Pages site in this org (`Resource not accessible by integration`). An owner must enable it **once**: **Settings → Pages → Build and deployment → Source: GitHub Actions**. Private repos need GitHub Pro/Team for Pages. Then re-run the workflow.
 
-**Custom domain:** `https://dmarniorganic.com/` (asset `base` is `/`; `frontend/public/CNAME` is published with the site). After the first Pages deploy:
-
-1. Registrar DNS for the apex — **A** records to `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`. Optional **CNAME** `www` → `dmarni.github.io`.
-2. **Settings → Pages → Custom domain:** `dmarniorganic.com`, then **Enforce HTTPS** once DNS is green.
-3. Repo **variable** `VITE_API_BASE` (e.g. `https://api.dmarniorganic.com`) so the SPA can reach the gateway. Leave it empty for local Vite proxy. This is HTML/JS only — catalog, cart, and checkout still need a hosted gateway + services.
-4. On the live gateway, `CORS_ALLOWED_ORIGINS` must include `https://dmarniorganic.com` (and `https://www.dmarniorganic.com` if you use www). If the API is on another host, set `COOKIE_SECURE=true` and `COOKIE_SAME_SITE=None` on identity-service so the refresh cookie is sent cross-site. Also point `STRIPE_SUCCESS_URL` / `STRIPE_CANCEL_URL` at the Pages origin.
+**Site URL (no custom DNS):** [https://marniorganicestore.github.io/harvest-co/](https://marniorganicestore.github.io/harvest-co/) (asset `base` is `/harvest-co/`). If a previous custom domain is still set, GitHub will 301 to it and the site will fail. Remove it: **Settings → Pages → Custom domain → Remove**, then re-run **GitHub Pages**. This is HTML/JS only — catalog, cart, and checkout still need a hosted gateway. Optional repo **variable** `VITE_API_BASE` prefixes `/api` calls; leave it empty for local Vite proxy. Gateway `CORS_ALLOWED_ORIGINS` must include `https://marniorganicestore.github.io` if you point at a public API.
 
 Pull requests and pushes to `main` run GitHub Actions:
 
