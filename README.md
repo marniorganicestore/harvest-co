@@ -1,6 +1,7 @@
 # Harvest & Co. Organic E-Store (Microservices)
 
 [![CI](https://github.com/dmarni/harvest-co/actions/workflows/ci.yml/badge.svg)](https://github.com/dmarni/harvest-co/actions/workflows/ci.yml)
+[![Pages](https://github.com/dmarni/harvest-co/actions/workflows/pages.yml/badge.svg)](https://github.com/dmarni/harvest-co/actions/workflows/pages.yml)
 
 Full-stack organic e-store built with Spring Boot 4.1 microservices, MongoDB, and React 19.
 
@@ -65,7 +66,13 @@ npm run dev
 
 ## CI / CD
 
-There is no deploy target in v1 (no Kubernetes, no image registry). **CD is: squash-merge a green PR into `main`.** Direct pushes to `main` should be blocked by the ruleset below.
+There is no Kubernetes or image-registry target in v1. **CD is: squash-merge a green PR into `main`.** Direct pushes to `main` should be blocked by the ruleset below.
+
+The Vite storefront **static `dist`** also deploys to GitHub Pages on push to `main` (frontend paths) or via **Actions → GitHub Pages → Run workflow**.
+
+1. In the repo: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+2. Site URL: `https://<owner>.github.io/harvest-co/` (project site; asset `base` is `/harvest-co/`).
+3. This is HTML/JS only. Catalog, cart, and checkout still need the gateway. Optional repo **variable** `VITE_API_BASE` (e.g. `https://api.example.com`) prefixes `/api` calls; leave it empty for local Vite proxy. Gateway CORS must allow the Pages origin if you point at a public API.
 
 Pull requests and pushes to `main` run GitHub Actions:
 
@@ -76,6 +83,7 @@ Pull requests and pushes to `main` run GitHub Actions:
 | Compose | `docker-compose.yml` is valid |
 | Secrets | Gitleaks scan of the commit graph (`.env.example` allowlisted) |
 | CI | Aggregate gate — **this is the only required status check** |
+| GitHub Pages | Vite production `dist` → Pages (not a required check) |
 
 CodeQL runs on public clones only (GitHub Advanced Security is required to upload alerts on private repos). Dependabot opens weekly grouped PRs for Maven, npm, Actions, and Compose images. Secrets stay in `.env` (see `.env.example`); they are never committed.
 

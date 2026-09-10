@@ -33,16 +33,18 @@ const useCartStore = create<CartState>((set) => ({
   setItems: (items) => set({ items })
 }))
 
+const apiRoot = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '')
+
 const api = {
   async get<T>(url: string, token?: string): Promise<T> {
-    const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    const res = await fetch(`${apiRoot}${url}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
     if (!res.ok) throw new Error(await res.text())
     return res.json()
   },
   async send<T>(url: string, method: string, body?: unknown, token?: string): Promise<T> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (token) headers.Authorization = `Bearer ${token}`
-    const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined, credentials: 'include' })
+    const res = await fetch(`${apiRoot}${url}`, { method, headers, body: body ? JSON.stringify(body) : undefined, credentials: 'include' })
     if (!res.ok) throw new Error(await res.text())
     if (res.status === 204) return undefined as T
     return res.json()
