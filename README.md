@@ -1,5 +1,7 @@
 # Harvest & Co. Organic E-Store (Microservices)
 
+[![CI](https://github.com/dmarni/harvest-co/actions/workflows/ci.yml/badge.svg)](https://github.com/dmarni/harvest-co/actions/workflows/ci.yml)
+
 Full-stack organic e-store built with Spring Boot 4.1 microservices, MongoDB, and React 19.
 
 ## Tech stack
