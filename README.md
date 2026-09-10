@@ -110,7 +110,7 @@ Pull requests and pushes to `main` run GitHub Actions:
 | Backend | Java 21, `./mvnw -T 1C verify` across all modules |
 | Frontend | `npm ci`, oxlint, TypeScript + Vite production build |
 | Compose | `docker-compose.yml` is valid |
-| Secrets | Gitleaks scan of the commit graph (`.env.example` allowlisted) |
+| Secrets | Gitleaks CLI scan of the commit graph (`.env.example` allowlisted; no org license) |
 | CI | Aggregate gate — **this is the only required status check** |
 | Docker | Bake service images; push to GHCR on `main` (not required) |
 | GitHub Pages | Vite production `dist` → Pages (not a required check) |
