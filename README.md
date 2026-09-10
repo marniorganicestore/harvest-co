@@ -94,7 +94,7 @@ ghcr.io/dmarni/harvest-co/review-service
 ghcr.io/dmarni/harvest-co/frontend
 ```
 
-The Vite storefront **static `dist`** deploys to GitHub Pages on push to `main` (frontend paths) or via **Actions → GitHub Pages → Run workflow**. The workflow sets `enablement: true` so the first run can create the Pages site (source: GitHub Actions). If that still 404s, set it once in **Settings → Pages → Source: GitHub Actions** (org policy can block auto-enable). Private repos need GitHub Pro/Team for Pages.
+The Vite storefront **static `dist`** deploys to GitHub Pages on push to `main` (frontend paths) or via **Actions → GitHub Pages → Run workflow**. `GITHUB_TOKEN` cannot create a Pages site in this org (`Resource not accessible by integration`). An owner must enable it **once**: **Settings → Pages → Build and deployment → Source: GitHub Actions**. Private repos need GitHub Pro/Team for Pages. Then re-run the workflow.
 
 **Custom domain:** `https://dmarniorganic.com/` (asset `base` is `/`; `frontend/public/CNAME` is published with the site). After the first Pages deploy:
 
