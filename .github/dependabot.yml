@@ -4,28 +4,43 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: monday
     open-pull-requests-limit: 5
     groups:
       spring:
         patterns:
           - "org.springframework*"
           - "org.springdoc*"
+      maven-plugins:
+        patterns:
+          - "org.apache.maven.plugins*"
 
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
+      day: monday
     open-pull-requests-limit: 5
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+    groups:
+      frontend:
+        patterns:
+          - "*"
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+      day: monday
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: weekly
+      day: monday

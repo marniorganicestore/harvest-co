@@ -4,13 +4,18 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
+
+env:
+  MAVEN_OPTS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
 
 jobs:
   backend:
@@ -19,6 +24,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-java@v5
         with:
@@ -29,7 +36,7 @@ jobs:
       - name: Verify all modules
         run: |
           chmod +x mvnw
-          ./mvnw -B -ntp verify
+          ./mvnw -B -ntp -T 1C verify
 
       - name: Upload test reports
         if: failure()
@@ -49,6 +56,8 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v5
         with:
@@ -71,14 +80,33 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Validate compose file
         run: docker compose -f docker-compose.yml config --quiet
 
-  # Single required check for branch protection
+  secrets:
+    name: Secrets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Scan for committed secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+          GITLEAKS_CONFIG: .gitleaks.toml
+
+  # Single required check for the ruleset — keep this job name exactly "CI"
   ci:
     name: CI
-    needs: [backend, frontend, compose]
+    needs: [backend, frontend, compose, secrets]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 2
@@ -88,3 +116,4 @@ jobs:
           test "${{ needs.backend.result }}" = "success"
           test "${{ needs.frontend.result }}" = "success"
           test "${{ needs.compose.result }}" = "success"
+          test "${{ needs.secrets.result }}" = "success"

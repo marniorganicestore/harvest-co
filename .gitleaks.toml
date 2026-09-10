@@ -1,0 +1,10 @@
+title = "Harvest & Co."
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Placeholder values in committed examples, not live secrets"
+paths = [
+  '''(^|/)\.env\.example$''',
+]
