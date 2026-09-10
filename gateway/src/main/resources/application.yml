@@ -10,35 +10,35 @@ spring:
         webmvc:
           routes:
             - id: identity
-              uri: http://localhost:8081
+              uri: ${IDENTITY_SERVICE_URL:http://localhost:8081}
               predicates:
                 - Path=/api/auth/**,/api/me/**,/api/admin/users/**
             - id: review-product-routes
-              uri: http://localhost:8087
+              uri: ${REVIEW_SERVICE_URL:http://localhost:8087}
               predicates:
                 - Path=/api/products/*/reviews
             - id: catalog
-              uri: http://localhost:8082
+              uri: ${CATALOG_SERVICE_URL:http://localhost:8082}
               predicates:
                 - Path=/api/categories/**,/api/products/**,/api/admin/catalog/**
             - id: cart
-              uri: http://localhost:8083
+              uri: ${CART_SERVICE_URL:http://localhost:8083}
               predicates:
                 - Path=/api/cart/**
             - id: inventory
-              uri: http://localhost:8084
+              uri: ${INVENTORY_SERVICE_URL:http://localhost:8084}
               predicates:
                 - Path=/api/admin/inventory/**
             - id: order
-              uri: http://localhost:8085
+              uri: ${ORDER_SERVICE_URL:http://localhost:8085}
               predicates:
                 - Path=/api/checkout/**,/api/orders/**,/api/admin/orders/**
             - id: payment
-              uri: http://localhost:8086
+              uri: ${PAYMENT_SERVICE_URL:http://localhost:8086}
               predicates:
                 - Path=/api/webhooks/stripe,/api/admin/payments/**
             - id: review
-              uri: http://localhost:8087
+              uri: ${REVIEW_SERVICE_URL:http://localhost:8087}
               predicates:
                 - Path=/api/reviews/**,/api/admin/reviews/**
 

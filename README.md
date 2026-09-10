@@ -1,6 +1,7 @@
 # Harvest & Co. Organic E-Store (Microservices)
 
 [![CI](https://github.com/dmarni/harvest-co/actions/workflows/ci.yml/badge.svg)](https://github.com/dmarni/harvest-co/actions/workflows/ci.yml)
+[![Docker](https://github.com/dmarni/harvest-co/actions/workflows/docker.yml/badge.svg)](https://github.com/dmarni/harvest-co/actions/workflows/docker.yml)
 [![Pages](https://github.com/dmarni/harvest-co/actions/workflows/pages.yml/badge.svg)](https://github.com/dmarni/harvest-co/actions/workflows/pages.yml)
 
 Full-stack organic e-store built with Spring Boot 4.1 microservices, MongoDB, and React 19.
@@ -27,11 +28,22 @@ Full-stack organic e-store built with Spring Boot 4.1 microservices, MongoDB, an
 
 ## Local run
 
-1. Start MongoDB
+Mongo only (then run services on the host as below):
 
 ```bash
 docker compose up -d mongo
 ```
+
+Full stack in Docker (same ports: gateway `8080`, storefront `5173`):
+
+```bash
+cp .env.example .env
+docker compose --profile app up --build
+```
+
+### Host processes
+
+1. Start MongoDB with Compose as above.
 
 2. Start backend services (each in a terminal)
 
@@ -66,7 +78,21 @@ npm run dev
 
 ## CI / CD
 
-There is no Kubernetes or image-registry target in v1. **CD is: squash-merge a green PR into `main`.** Direct pushes to `main` should be blocked by the ruleset below.
+There is no Kubernetes target in v1. **App CD is: squash-merge a green PR into `main`.** Direct pushes to `main` should be blocked by the ruleset below.
+
+On push to `main`, Docker Bake builds every module and pushes to **GHCR** (`ghcr.io/<owner>/harvest-co/<service>:<sha>` and `:latest`). Pull requests bake without pushing. Images are not a required status check until you add **Docker** next to **CI**.
+
+```text
+ghcr.io/dmarni/harvest-co/gateway
+ghcr.io/dmarni/harvest-co/identity-service
+ghcr.io/dmarni/harvest-co/catalog-service
+ghcr.io/dmarni/harvest-co/cart-service
+ghcr.io/dmarni/harvest-co/inventory-service
+ghcr.io/dmarni/harvest-co/order-service
+ghcr.io/dmarni/harvest-co/payment-service
+ghcr.io/dmarni/harvest-co/review-service
+ghcr.io/dmarni/harvest-co/frontend
+```
 
 The Vite storefront **static `dist`** also deploys to GitHub Pages on push to `main` (frontend paths) or via **Actions → GitHub Pages → Run workflow**. The workflow sets `enablement: true` so the first run can create the Pages site (source: GitHub Actions). If that still 404s, set it once in **Settings → Pages → Source: GitHub Actions** (org policy can block auto-enable). Private repos need GitHub Pro/Team for Pages.
 
@@ -81,6 +107,7 @@ Pull requests and pushes to `main` run GitHub Actions:
 | Compose | `docker-compose.yml` is valid |
 | Secrets | Gitleaks scan of the commit graph (`.env.example` allowlisted) |
 | CI | Aggregate gate — **this is the only required status check** |
+| Docker | Bake service images; push to GHCR on `main` (not required) |
 | GitHub Pages | Vite production `dist` → Pages (not a required check) |
 
 CodeQL runs on public clones only (GitHub Advanced Security is required to upload alerts on private repos). Dependabot opens weekly grouped PRs for Maven, npm, Actions, and Compose images. Secrets stay in `.env` (see `.env.example`); they are never committed.

@@ -84,7 +84,7 @@ jobs:
           persist-credentials: false
 
       - name: Validate compose file
-        run: docker compose -f docker-compose.yml config --quiet
+        run: docker compose -f docker-compose.yml --profile app --profile tools config --quiet
 
   secrets:
     name: Secrets

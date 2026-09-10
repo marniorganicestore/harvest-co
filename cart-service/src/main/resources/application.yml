@@ -3,8 +3,9 @@ server:
 spring:
   application:
     name: cart-service
-  mongodb:
-    uri: ${MONGODB_URI:mongodb://localhost:27017/cart}
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/cart}
 app:
   internal-key: ${INTERNAL_API_KEY:internal-secret}
 services:

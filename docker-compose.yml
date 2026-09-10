@@ -1,3 +1,14 @@
+x-app: &app
+  profiles: ["app"]
+  restart: unless-stopped
+  depends_on:
+    mongo:
+      condition: service_healthy
+
+x-java-env: &java-env
+  JWT_SECRET: ${JWT_SECRET:-change-me-please-change-me-please-change-me-please}
+  INTERNAL_API_KEY: ${INTERNAL_API_KEY:-internal-secret}
+
 services:
   mongo:
     image: mongo:8
@@ -9,6 +20,12 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: root
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "-u", "root", "-p", "root", "--authenticationDatabase", "admin", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
 
   mongo-express:
     image: mongo-express:1.0.2
@@ -19,6 +36,177 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: root
       ME_CONFIG_MONGODB_URL: mongodb://root:root@mongo:27017/
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  identity-service:
+    <<: *app
+    image: harvest-co/identity-service:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        MODULE: identity-service
+    ports:
+      - "8081:8081"
+    environment:
+      <<: *java-env
+      MONGODB_URI: mongodb://root:root@mongo:27017/identity?authSource=admin
+
+  catalog-service:
+    <<: *app
+    image: harvest-co/catalog-service:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        MODULE: catalog-service
+    ports:
+      - "8082:8082"
+    environment:
+      <<: *java-env
+      MONGODB_URI: mongodb://root:root@mongo:27017/catalog?authSource=admin
+
+  cart-service:
+    <<: *app
+    image: harvest-co/cart-service:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        MODULE: cart-service
+    ports:
+      - "8083:8083"
+    environment:
+      <<: *java-env
+      MONGODB_URI: mongodb://root:root@mongo:27017/cart?authSource=admin
+      CATALOG_SERVICE_URL: http://catalog-service:8082
+      INVENTORY_SERVICE_URL: http://inventory-service:8084
+
+  inventory-service:
+    <<: *app
+    image: harvest-co/inventory-service:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        MODULE: inventory-service
+    ports:
+      - "8084:8084"
+    environment:
+      <<: *java-env
+      MONGODB_URI: mongodb://root:root@mongo:27017/inventory?authSource=admin
+
+  order-service:
+    <<: *app
+    image: harvest-co/order-service:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        MODULE: order-service
+    ports:
+      - "8085:8085"
+    environment:
+      <<: *java-env
+      MONGODB_URI: mongodb://root:root@mongo:27017/order?authSource=admin
+      CART_SERVICE_URL: http://cart-service:8083
+      INVENTORY_SERVICE_URL: http://inventory-service:8084
+      CATALOG_SERVICE_URL: http://catalog-service:8082
+      PAYMENT_SERVICE_URL: http://payment-service:8086
+
+  payment-service:
+    <<: *app
+    image: harvest-co/payment-service:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        MODULE: payment-service
+    ports:
+      - "8086:8086"
+    environment:
+      <<: *java-env
+      MONGODB_URI: mongodb://root:root@mongo:27017/payment?authSource=admin
+      ORDER_SERVICE_URL: http://order-service:8085
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL:-http://localhost:5173/order/success?session_id={CHECKOUT_SESSION_ID}}
+      STRIPE_CANCEL_URL: ${STRIPE_CANCEL_URL:-http://localhost:5173/cart}
+
+  review-service:
+    <<: *app
+    image: harvest-co/review-service:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        MODULE: review-service
+    ports:
+      - "8087:8087"
+    environment:
+      <<: *java-env
+      MONGODB_URI: mongodb://root:root@mongo:27017/review?authSource=admin
+      ORDER_SERVICE_URL: http://order-service:8085
+      CATALOG_SERVICE_URL: http://catalog-service:8082
+
+  gateway:
+    <<: *app
+    image: harvest-co/gateway:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        MODULE: gateway
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *java-env
+      IDENTITY_SERVICE_URL: http://identity-service:8081
+      CATALOG_SERVICE_URL: http://catalog-service:8082
+      CART_SERVICE_URL: http://cart-service:8083
+      INVENTORY_SERVICE_URL: http://inventory-service:8084
+      ORDER_SERVICE_URL: http://order-service:8085
+      PAYMENT_SERVICE_URL: http://payment-service:8086
+      REVIEW_SERVICE_URL: http://review-service:8087
+    depends_on:
+      mongo:
+        condition: service_healthy
+      identity-service:
+        condition: service_started
+      catalog-service:
+        condition: service_started
+      cart-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      review-service:
+        condition: service_started
+
+  frontend:
+    <<: *app
+    image: harvest-co/frontend:local
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      gateway:
+        condition: service_started
 
 volumes:
   mongo_data:

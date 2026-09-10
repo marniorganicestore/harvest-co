@@ -44,3 +44,9 @@ updates:
     schedule:
       interval: weekly
       day: monday
+
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
