@@ -68,11 +68,9 @@ npm run dev
 
 There is no Kubernetes or image-registry target in v1. **CD is: squash-merge a green PR into `main`.** Direct pushes to `main` should be blocked by the ruleset below.
 
-The Vite storefront **static `dist`** also deploys to GitHub Pages on push to `main` (frontend paths) or via **Actions → GitHub Pages → Run workflow**.
+The Vite storefront **static `dist`** also deploys to GitHub Pages on push to `main` (frontend paths) or via **Actions → GitHub Pages → Run workflow**. The workflow sets `enablement: true` so the first run can create the Pages site (source: GitHub Actions). If that still 404s, set it once in **Settings → Pages → Source: GitHub Actions** (org policy can block auto-enable). Private repos need GitHub Pro/Team for Pages.
 
-1. In the repo: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-2. Site URL: `https://<owner>.github.io/harvest-co/` (project site; asset `base` is `/harvest-co/`).
-3. This is HTML/JS only. Catalog, cart, and checkout still need the gateway. Optional repo **variable** `VITE_API_BASE` (e.g. `https://api.example.com`) prefixes `/api` calls; leave it empty for local Vite proxy. Gateway CORS must allow the Pages origin if you point at a public API.
+Site URL: `https://<owner>.github.io/harvest-co/` (project site; asset `base` is `/harvest-co/`). This is HTML/JS only. Catalog, cart, and checkout still need the gateway. Optional repo **variable** `VITE_API_BASE` (e.g. `https://api.example.com`) prefixes `/api` calls; leave it empty for local Vite proxy. Gateway CORS must allow the Pages origin if you point at a public API.
 
 Pull requests and pushes to `main` run GitHub Actions:
 
