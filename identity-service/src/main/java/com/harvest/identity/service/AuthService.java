@@ -7,23 +7,35 @@ import com.harvest.identity.web.AuthDtos.AuthResponse;
 import com.harvest.identity.web.AuthDtos.LoginRequest;
 import com.harvest.identity.web.AuthDtos.ProfileRequest;
 import com.harvest.identity.web.AuthDtos.RegisterRequest;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import java.time.Duration;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
+    private static final Duration REFRESH_TTL = Duration.ofDays(7);
+
     private final UserRepository userRepository;
     private final PasswordEncoder encoder;
     private final JwtService jwtService;
+    private final boolean cookieSecure;
+    private final String cookieSameSite;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder encoder, JwtService jwtService) {
+    public AuthService(
+            UserRepository userRepository,
+            PasswordEncoder encoder,
+            JwtService jwtService,
+            @Value("${app.cookie.secure:false}") boolean cookieSecure,
+            @Value("${app.cookie.same-site:Lax}") String cookieSameSite) {
         this.userRepository = userRepository;
         this.encoder = encoder;
         this.jwtService = jwtService;
+        this.cookieSecure = cookieSecure;
+        this.cookieSameSite = cookieSameSite;
     }
 
     public AuthResponse register(RegisterRequest request, HttpServletResponse response) {
@@ -66,9 +78,7 @@ public class AuthService {
     }
 
     public void logout(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
-                .httpOnly(true).path("/").maxAge(0).sameSite("Lax").build();
-        response.addHeader("Set-Cookie", cookie.toString());
+        response.addHeader("Set-Cookie", refreshCookie("", Duration.ZERO).toString());
     }
 
     public User getMe(String userId) {
@@ -89,10 +99,18 @@ public class AuthService {
 
     private AuthResponse issueTokens(User user, HttpServletResponse response) {
         String access = jwtService.createAccessToken(user.getId(), user.getEmail(), user.getRoles(), 900);
-        String refresh = jwtService.createAccessToken(user.getId(), user.getEmail(), user.getRoles(), 604800);
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", refresh)
-                .httpOnly(true).path("/").maxAge(604800).sameSite("Lax").build();
-        response.addHeader("Set-Cookie", cookie.toString());
+        String refresh = jwtService.createAccessToken(user.getId(), user.getEmail(), user.getRoles(), (int) REFRESH_TTL.toSeconds());
+        response.addHeader("Set-Cookie", refreshCookie(refresh, REFRESH_TTL).toString());
         return new AuthResponse(access, user.getId(), user.getEmail(), user.getName(), user.getRoles());
+    }
+
+    private ResponseCookie refreshCookie(String value, Duration maxAge) {
+        return ResponseCookie.from("refreshToken", value)
+                .httpOnly(true)
+                .path("/")
+                .maxAge(maxAge)
+                .secure(cookieSecure)
+                .sameSite(cookieSameSite)
+                .build();
     }
 }

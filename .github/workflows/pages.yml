@@ -37,7 +37,6 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Setup Pages
-        id: pages
         uses: actions/configure-pages@v6
         with:
           enablement: true
@@ -48,7 +47,8 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_BASE_PATH: ${{ steps.pages.outputs.base_path || format('/{0}', github.event.repository.name) }}
+          # Apex custom domain (https://dmarniorganic.com/) — not /harvest-co/
+          VITE_BASE_PATH: "/"
           VITE_API_BASE: ${{ vars.VITE_API_BASE }}
 
       - name: Upload artifact
