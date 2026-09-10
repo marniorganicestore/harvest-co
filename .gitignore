@@ -1,0 +1,56 @@
+# Secrets — never commit real values
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.jks
+credentials.json
+secrets/
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+.flattened-pom.xml
+
+# Node / Vite
+node_modules/
+dist/
+dist-ssr/
+*.local
+frontend/node_modules/.tmp/
+
+# Logs and debug
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDEs
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Test / coverage
+coverage/
+*.exec
+.nyc_output/
+
+# Local tooling
+*.swp
+*.swo
+.cache/

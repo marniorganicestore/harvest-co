@@ -1,0 +1,54 @@
+---
+description: Java 21 and Spring Boot 4 conventions for Harvest services
+globs: "**/*.java"
+alwaysApply: false
+---
+
+# Java / Spring Boot
+
+Constructor injection only. Java 21. Match the existing package layout; do not introduce Lombok.
+
+## Layers
+
+- `web` — controllers, request/response **records**. Keep HTTP mapping here.
+- `service` — orchestration, saga steps, invariants.
+- `repo` — Spring Data Mongo repositories only.
+- `domain` — `@Document` entities. Not API contracts.
+- `config` — SecurityFilterChain, RestClient, InternalKeyFilter beans.
+
+```java
+// ❌ BAD — leak Mongo entity + field injection
+@Autowired ProductRepository repo;
+@GetMapping("/api/products/{slug}")
+public Product get(@PathVariable String slug) { return repo.findBySlug(slug).orElseThrow(); }
+
+// ✅ GOOD
+public record ProductResponse(String id, String slug, String name, long pricePaise, ...) {}
+public ProductResponse get(@PathVariable String slug) {
+    return catalogService.getActiveBySlug(slug);
+}
+```
+
+## Errors and validation
+
+- Throw `IllegalArgumentException` for domain/validation failures (`ApiExceptionHandler` → RFC 7807 `ProblemDetail`).
+- Use `@Valid` on mutating request bodies.
+- Prefer dedicated 401/403 exceptions over treating auth failures as 400.
+- Never swallow exceptions or return raw stack traces.
+
+## Inter-service HTTP
+
+Use the module's `RestClient` bean. Always send `X-Internal-Key`. Parse typed records, not raw `Map`, unless a temporary adapter already exists.
+
+```java
+restClient.get().uri(catalogUrl + "/internal/products/" + id)
+    .header("X-Internal-Key", internalKey)
+    .retrieve()
+    .body(ProductInternalResponse.class);
+```
+
+## Style
+
+- Records for DTOs (see `AuthDtos`). Nested records for value objects (`Order.Line`).
+- Money: `long pricePaise` / `totalPaise` — never `double` currency.
+- Keep controllers thin; put checkout saga logic in `order-service` only.

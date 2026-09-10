@@ -1,0 +1,13 @@
+server:
+  port: 8083
+spring:
+  application:
+    name: cart-service
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/cart}
+app:
+  internal-key: ${INTERNAL_API_KEY:internal-secret}
+services:
+  catalog: ${CATALOG_SERVICE_URL:http://localhost:8082}
+  inventory: ${INVENTORY_SERVICE_URL:http://localhost:8084}

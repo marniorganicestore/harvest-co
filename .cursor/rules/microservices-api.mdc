@@ -1,0 +1,44 @@
+---
+description: Bounded contexts, gateway routes, and REST contracts for Harvest microservices
+globs:
+  - "**/*.java"
+  - "**/application.yml"
+  - "**/docker-compose.yml"
+alwaysApply: false
+---
+
+# Bounded Contexts and REST
+
+Each service owns its Mongo DB (`identity`, `catalog`, `cart`, `inventory`, `order`, `payment`, `review`). Do not query another service's collection.
+
+## Public surface (gateway → `/api/**`)
+
+| Area | Paths |
+|---|---|
+| Auth | `/api/auth/register\|login\|google\|refresh\|logout`, `/api/me` |
+| Catalog | `/api/categories`, `/api/products`, `/api/products/{slug}` |
+| Cart | `/api/cart` (guestToken query for guests) |
+| Checkout | `/api/checkout/sessions`, `/api/orders` |
+| Reviews | `/api/reviews`, `/api/products/{id}/reviews` |
+| Webhook | `/api/webhooks/stripe` (no JWT; signature / event id) |
+| Admin | `/api/admin/**` — `ADMIN` role via `UserContextResolver` |
+
+Add new public paths by updating **both** the service controller and `gateway/src/main/resources/application.yml` routes. Route order matters: more specific paths (e.g. `/api/products/*/reviews`) before catch-alls.
+
+## Internal surface (`/internal/**`)
+
+Service-to-service only. Protected by `InternalKeyFilter`. Gateway must not proxy these.
+
+Typical: catalog product-by-id + rating rollup · inventory reserve/confirm/release + stock batch · cart get/clear by user · payment session · order mark-paid + verified-purchase.
+
+## Invariants
+
+- **identity** — JWT access (~15m) + refresh cookie (7d). Roles `CUSTOMER` / `ADMIN`.
+- **catalog** — unique `slug`; no stock; rating fields updated only via internal rollup.
+- **inventory** — atomic reserve; confirm decrements onHand; release restores reserved.
+- **cart** — user or guest; merge on login; validate product + available qty.
+- **order** — status `PENDING_PAYMENT` → `CONFIRMED` → `PACKED` → `SHIPPED` → `DELIVERED` / `CANCELLED`.
+- **payment** — Stripe event id unique (`processed_events`) for idempotency.
+- **review** — one review per user+product; verified purchase via order internal API.
+
+Shop availability: catalog may batch `GET /internal/stock?productIds=`. On failure, omit the badge — do not fail the listing.

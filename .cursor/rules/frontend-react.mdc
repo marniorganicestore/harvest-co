@@ -1,0 +1,48 @@
+---
+description: React 19, Vite, TanStack Query, and Zustand conventions for the Harvest storefront
+globs:
+  - "frontend/src/**/*.ts"
+  - "frontend/src/**/*.tsx"
+alwaysApply: false
+---
+
+# Frontend (React 19 + Vite)
+
+TypeScript strict. Functional components. Do not add a heavy UI library (MUI, Ant, Chakra). Grow a small local kit: Button, Input, Card, Badge, Toast.
+
+## Structure (split the App.tsx monolith)
+
+Colocate by route, not by type sprawl:
+
+- `pages/` — Home, Shop, Product, Cart, Checkout, Orders, Login, Register, Admin
+- `components/` — layout, product card, qty stepper, skeletons
+- `lib/api.ts` — fetch wrapper (JSON, `credentials: 'include'`, ProblemDetail errors)
+- `store/` — Zustand **client** state only (guest token, cart items, access token)
+- `hooks/` — TanStack Query hooks for server data
+
+## Data fetching
+
+```tsx
+// ❌ BAD — ad-hoc useEffect fetch in every page
+useEffect(() => { api.get('/api/products').then(setProducts) }, [])
+
+// ✅ GOOD — Query for server state
+const { data, isPending, isError } = useQuery({
+  queryKey: ['products', filters],
+  queryFn: () => api.get<Product[]>('/api/products' + qs),
+})
+```
+
+- **TanStack Query**: catalog, orders, reviews, admin lists.
+- **Zustand**: guestToken, optimistic cart qty, auth token. Persist guestToken to `localStorage`.
+- Vite proxy: call `/api/...` (relative). Never hardcode `localhost:8081` from the SPA.
+
+## Routing
+
+Customer: `/` `/shop` `/product/:slug` `/cart` `/checkout` `/order/success` `/account/orders` `/login` `/register`
+
+Admin: `/admin/*` role-gated. Use React Router 7. Prefer View Transitions on shop → PDP.
+
+## Quality
+
+No `any`. Share types with API records (`pricePaise`, `orderStatus`). Handle 401 by clearing token and sending the user to `/login`. After login, merge guest cart via the cart API.

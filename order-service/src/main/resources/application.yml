@@ -1,0 +1,15 @@
+server:
+  port: 8085
+spring:
+  application:
+    name: order-service
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/order}
+app:
+  internal-key: ${INTERNAL_API_KEY:internal-secret}
+services:
+  cart: ${CART_SERVICE_URL:http://localhost:8083}
+  inventory: ${INVENTORY_SERVICE_URL:http://localhost:8084}
+  catalog: ${CATALOG_SERVICE_URL:http://localhost:8082}
+  payment: ${PAYMENT_SERVICE_URL:http://localhost:8086}

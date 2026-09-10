@@ -1,0 +1,47 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: identity
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/auth/**,/api/me/**,/api/admin/users/**
+            - id: review-product-routes
+              uri: http://localhost:8087
+              predicates:
+                - Path=/api/products/*/reviews
+            - id: catalog
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/categories/**,/api/products/**,/api/admin/catalog/**
+            - id: cart
+              uri: http://localhost:8083
+              predicates:
+                - Path=/api/cart/**
+            - id: inventory
+              uri: http://localhost:8084
+              predicates:
+                - Path=/api/admin/inventory/**
+            - id: order
+              uri: http://localhost:8085
+              predicates:
+                - Path=/api/checkout/**,/api/orders/**,/api/admin/orders/**
+            - id: payment
+              uri: http://localhost:8086
+              predicates:
+                - Path=/api/webhooks/stripe,/api/admin/payments/**
+            - id: review
+              uri: http://localhost:8087
+              predicates:
+                - Path=/api/reviews/**,/api/admin/reviews/**
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-me-please-change-me-please-change-me-please}

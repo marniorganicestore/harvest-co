@@ -1,0 +1,45 @@
+---
+description: JWT, gateway trust headers, internal API key, and secret handling
+globs:
+  - "**/*.java"
+  - "**/application.yml"
+  - "frontend/src/**/*.ts"
+  - "frontend/src/**/*.tsx"
+alwaysApply: false
+---
+
+# Security
+
+## Trust boundary
+
+- **Gateway** validates Bearer JWT (`JwtRelayFilter`) and **sets** `X-User-Id`, `X-User-Email`, `X-User-Roles`. Downstream services trust those headers on the private network.
+- Strip / overwrite incoming `X-User-*` from the public internet. Invalid tokens proceed as **guest**, not 500.
+- `/internal/**` requires `X-Internal-Key`. Gateway **does not** route `/internal/**`.
+- CORS belongs **only** on the gateway. Do not enable permissive CORS on domain services.
+
+```java
+UserContext ctx = UserContextResolver.fromHeaders(request);
+if (ctx.userId() == null || ctx.userId().isBlank()) {
+    throw new IllegalArgumentException("Unauthorized");
+}
+if (!ctx.isAdmin()) {
+    throw new IllegalArgumentException("Admin access required");
+}
+```
+
+## Auth flows
+
+- Passwords: BCrypt only. Never log tokens, cookies, or Stripe secrets.
+- Access JWT in memory (frontend). Refresh token: **httpOnly** cookie `refreshToken`; `credentials: 'include'` on auth calls.
+- Google: verify ID token (JWKS) in production; do not trust client-supplied `email`/`sub` without verification.
+- Stripe webhook: no JWT. Verify signature when keys are present; persist Stripe event id uniquely so retries are idempotent.
+
+## Frontend
+
+- Send `Authorization: Bearer` only when an access token exists.
+- Never store refresh tokens in `localStorage`. Guest cart token may live in `localStorage`.
+- Gate `/admin/**` on `ADMIN` in UI **and** on the API. UI hiding is not security.
+
+## Secrets
+
+Keep values in `.env` (`JWT_SECRET`, `INTERNAL_API_KEY`, Stripe, Google, admin seed). Commit `.env.example` placeholders only. Never hardcode production secrets in YAML or source.
